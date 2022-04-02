@@ -14,7 +14,23 @@ void TcpClient::connectToHost(const QString &ip, const QString &port)
 
 void TcpClient::sendMessage(const QString &message)
 {
+    _socket.write("[MSG]");
     _socket.write(message.toUtf8());
+    _socket.flush();
+}
+
+void TcpClient::sendFile(const QString &path)
+{
+    _socket.write("[FILE]");
+
+    QFile file(path);
+    file.open(QIODevice::ReadOnly);
+    QByteArray ba = file.readAll();
+
+    // Write [filename]
+    _socket.write("[" + QFileInfo(file).fileName().toUtf8() + "]");
+
+    _socket.write(ba);
     _socket.flush();
 }
 

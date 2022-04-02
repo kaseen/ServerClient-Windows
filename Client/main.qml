@@ -14,6 +14,10 @@ Window {
     function getName(url){
         return (url.slice(url.lastIndexOf("/")+1))
     }
+
+    function getFilePath(url){
+        return (url.slice(url.indexOf("///")+3))
+    }
     
     Connections {
         target: client
@@ -30,29 +34,48 @@ Window {
         folder: "file:///C:/Users/tasic/OneDrive/Documents/test/"
         onAccepted: {
             filename.text = getName(this.file.toString())
+            sendFile.enabled = true
+        }
+        function send(){
+            client.sendFile(getFilePath(this.file.toString()))
         }
     }
 
     ColumnLayout {
         anchors.fill: parent
-        Button {
-            text: "Open file dialog"
-            onClicked: fileDialog.open()
-        }
-        Label {
-            id: filename
-        }
-        ListView {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            clip: true
-            model: ListModel {
-                id: listModelMessages
+        RowLayout{
+            ListView {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                clip: true
+                model: ListModel {
+                    id: listModelMessages
+                }
+                delegate: ItemDelegate {
+                    text: message
+                }
+                ScrollBar.vertical: ScrollBar {}
             }
-            delegate: ItemDelegate {
-                text: message
+            ColumnLayout{
+                Layout.alignment: Qt.AlignTop
+                Button {
+                    Layout.preferredWidth: 100
+                    text: "Choose file"
+                    onClicked: fileDialog.open()
+                }
+                TextField {
+                    Layout.preferredWidth: 100
+                    readOnly: true
+                    id: filename
+                }
+                Button {
+                    Layout.preferredWidth: 100
+                    id: sendFile
+                    enabled: false
+                    text: "Send file"
+                    onClicked: fileDialog.send()
+                }
             }
-            ScrollBar.vertical: ScrollBar {}
         }
         RowLayout {
            Layout.fillWidth: true

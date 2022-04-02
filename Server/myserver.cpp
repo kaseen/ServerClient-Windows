@@ -27,13 +27,44 @@ void MyServer::onNewConnection()
 void MyServer::onReadyRead()
 {
     const auto client = qobject_cast<QTcpSocket*>(sender());
+
     if(client == nullptr){
         return ;
     }
 
-    const QByteArray message = client->readAll();
+    QByteArray message = client->readAll();
 
-    emit newMessage(client, message);
+    if(message.startsWith("[MSG]")){
+        // Remove [MSG]
+        message = message.remove(0,5);
+        emit newMessage(client, message);
+    }
+    if(message.startsWith("[FILE]")){
+
+        // Remove [FILE]
+        message = message.remove(0,6);
+
+        // Get filename and remove brackets
+        message = message.remove(0,1);
+        const uint k = message.indexOf("]");
+        const QByteArray filename = message.left(k);
+        message = message.remove(0, k+1);
+
+        QFile file;
+        file.setFileName("E:/TEST/" + filename);
+
+        if (!file.open(QIODevice::WriteOnly | QIODevice::Append)) {
+            qDebug() << "Can't open file for write";
+            return;
+        }
+
+        file.write(message);
+        file.close();
+
+        qDebug() << "File size:" << file.size();
+        //emit newFile(client, file);
+    }
+
 }
 
 void MyServer::onNewMessage(QTcpSocket *client, const QByteArray &ba)

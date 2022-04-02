@@ -4,6 +4,8 @@
 #include <iostream>
 #include <QObject>
 #include <QTcpSocket>
+#include <QFile>
+#include <QFileInfo>
 
 class TcpClient : public QObject
 {
@@ -17,6 +19,7 @@ signals:
 public slots:
     void connectToHost(const QString &ip, const QString &port);
     void sendMessage(const QString &message);
+    void sendFile(const QString &path);
 
 private slots:
     void onConnected();
