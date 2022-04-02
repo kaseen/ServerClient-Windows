@@ -23,5 +23,3 @@ add_executable(Server
 )
 target_link_libraries(Server Qt${QT_VERSION_MAJOR}::Core)
 target_link_libraries(Server Qt6::Network)
-
-

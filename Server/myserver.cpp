@@ -17,9 +17,6 @@ void MyServer::onNewConnection()
         return ;
     }
 
-    client->write("\n>>> ");
-    client->flush();
-
     _clients.insert(this->getClientKey(client), client);
     std::cout << this->getClientKey(client).toStdString() + " connected\n";
 
@@ -59,10 +56,11 @@ void MyServer::onNewMessage(QTcpSocket *client, const QByteArray &ba)
         output.remove(output.lastIndexOf("\r\n"), 1000);
 
         client->write(output.toLocal8Bit());
+
+        client->write("\n> Command \"" + ba.trimmed() + "\" successfully executed!");
+        client->flush();
     }
 
-    client->write("\n>>> ");
-    client->flush();
 }
 
 void MyServer::onDisconnected()
