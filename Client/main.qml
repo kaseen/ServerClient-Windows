@@ -21,7 +21,7 @@ Window {
     
     Connections {
         target: client
-        function onNewMessage(ba){
+        function onNewMessageQML(ba){
             listModelMessages.append({message: ba + ""})
         }
     }
@@ -29,9 +29,8 @@ Window {
     Labs.FileDialog {
         id: fileDialog
         title: "Please choose a file"
-        //folder: "file:///C:/"
-        //nameFilters: "*.exe"
-        folder: "file:///C:/Users/tasic/OneDrive/Documents/test/"
+        folder: "file:///C:/"
+        nameFilters: "*.exe"
         onAccepted: {
             filename.text = getName(this.file.toString())
             sendFile.enabled = true

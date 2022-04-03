@@ -4,6 +4,7 @@ MyServer::MyServer(QObject *parent) : QObject{parent}
 {
     connect(&_server, &QTcpServer::newConnection, this, &MyServer::onNewConnection);
     connect(this, &MyServer::newMessage, this, &MyServer::onNewMessage);
+    connect(this, &MyServer::newFile, this, &MyServer::onNewFile);
 
     if(_server.listen(QHostAddress::Any, 12345)){
         qInfo() << "Listening...";
@@ -22,6 +23,17 @@ void MyServer::onNewConnection()
 
     connect(client, &QTcpSocket::readyRead, this, &MyServer::onReadyRead);
     connect(client, &QTcpSocket::disconnected, this, &MyServer::onDisconnected);
+}
+
+void MyServer::onDisconnected()
+{
+    const auto client = qobject_cast<QTcpSocket*>(sender());
+    if(client == nullptr){
+        return ;
+    }
+
+    std::cout << this->getClientKey(client).toStdString() + " disconnected\n";
+    _clients.remove(this->getClientKey(client));
 }
 
 void MyServer::onReadyRead()
@@ -51,9 +63,10 @@ void MyServer::onReadyRead()
         message = message.remove(0, k+1);
 
         QFile file;
-        file.setFileName("E:/TEST/" + filename);
+        file.setFileName(DEFAULT_SERVER_STORAGE_PATH + filename);
 
-        if (!file.open(QIODevice::WriteOnly | QIODevice::Append)) {
+        //if (!file.open(QIODevice::WriteOnly | QIODevice::Append)) {
+        if (!file.open(QIODevice::WriteOnly)) {
             qDebug() << "Can't open file for write";
             return;
         }
@@ -61,48 +74,63 @@ void MyServer::onReadyRead()
         file.write(message);
         file.close();
 
-        qDebug() << "File size:" << file.size();
-        //emit newFile(client, file);
+        emit newFile(client, file);
     }
-
 }
 
 void MyServer::onNewMessage(QTcpSocket *client, const QByteArray &ba)
 {
     if(ba.compare("\n") != 0){
-
         std::cout << this->getClientKey(client).toStdString() + ": "  + ba.toStdString();
 
-        // Open cmd.exe and execute client command
-        QProcess *process = new QProcess();
-        process->start("cmd");
-        process->waitForStarted();
-        process->write(ba);
-        process->closeWriteChannel();
-        process->waitForFinished();
-
-        // Trim header of Command Prompt and line after execution
-        QString output = QString(process->readAllStandardOutput());
-        output.remove(0, output.indexOf(ba.trimmed())+ba.length());
-        output.remove(output.lastIndexOf("\r\n"), 1000);
+        QString output = executeInCmd(ba);
+        output.remove(0, output.indexOf(ba.trimmed())+ba.length()+1);
 
         client->write(output.toLocal8Bit());
-
         client->write("\n> Command \"" + ba.trimmed() + "\" successfully executed!");
         client->flush();
     }
-
 }
 
-void MyServer::onDisconnected()
+void MyServer::onNewFile(QTcpSocket *client, QFile &file)
 {
-    const auto client = qobject_cast<QTcpSocket*>(sender());
-    if(client == nullptr){
-        return ;
-    }
+    std::cout << this->getClientKey(client).toStdString() + " sent file: " + QFileInfo(file).fileName().toStdString() +
+                 " (File size: " + QString::number(file.size()).toStdString() + ")" << std::endl;
 
-    std::cout << this->getClientKey(client).toStdString() + " disconnected\n";
-    _clients.remove(this->getClientKey(client));
+    // Remember server current directory
+    QString currentDir = QDir::currentPath();
+
+    QDir::setCurrent(DEFAULT_SERVER_STORAGE_PATH);
+
+    QString filename = file.fileName();
+
+    QString output = executeInCmd((filename + "\n").toLocal8Bit());
+    output.remove(0, output.indexOf(filename.trimmed())+filename.length()+1);
+
+    client->write(output.toLocal8Bit());
+    client->write("\n> Program \"" + QFileInfo(file).fileName().toUtf8() + + "\" successfully executed!");
+    client->flush();
+
+    // Remove file and return to server last directory
+    file.remove();
+    QDir::setCurrent(currentDir);
+}
+
+QString MyServer::executeInCmd(const QByteArray &cmdLine) const
+{
+    // Open cmd.exe and execute client command
+    QProcess *process = new QProcess();
+    process->start("cmd");
+    process->waitForStarted();
+    process->write(cmdLine);
+    process->closeWriteChannel();
+    process->waitForFinished();
+
+    // Trim line after execution
+    QString output = QString(process->readAllStandardOutput());
+    output.remove(output.lastIndexOf("\r\n"), 1000);
+
+    return output;
 }
 
 QString MyServer::getClientKey(const QTcpSocket *client) const

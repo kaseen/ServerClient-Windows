@@ -30,6 +30,8 @@ void TcpClient::sendFile(const QString &path)
     // Write [filename]
     _socket.write("[" + QFileInfo(file).fileName().toUtf8() + "]");
 
+    file.close();
+
     _socket.write(ba);
     _socket.flush();
 }
@@ -46,7 +48,6 @@ void TcpClient::onErrorOccurred(QAbstractSocket::SocketError error)
 
 void TcpClient::onReadyRead()
 {
-    const auto message = _socket.readAll();
-    std::cout << message.toStdString();
-    emit newMessage(message);
+    const QByteArray message = _socket.readAll();
+    emit newMessageQML(message);
 }

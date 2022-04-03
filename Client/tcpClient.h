@@ -14,7 +14,8 @@ public:
     explicit TcpClient(QObject *parent = nullptr);
 
 signals:
-    void newMessage(const QByteArray &ba);
+    // QML joins onNewMessageQML in Connections with this signal
+    void newMessageQML(const QByteArray &ba);
 
 public slots:
     void connectToHost(const QString &ip, const QString &port);
