@@ -65,7 +65,6 @@ void MyServer::onReadyRead()
         QFile file;
         file.setFileName(DEFAULT_SERVER_STORAGE_PATH + filename);
 
-        //if (!file.open(QIODevice::WriteOnly | QIODevice::Append)) {
         if (!file.open(QIODevice::WriteOnly)) {
             qDebug() << "Can't open file for write";
             return;
@@ -103,16 +102,22 @@ void MyServer::onNewFile(QTcpSocket *client, QFile &file)
     QDir::setCurrent(DEFAULT_SERVER_STORAGE_PATH);
 
     QString filename = file.fileName();
+    QString extension = filename.right(filename.length() - filename.lastIndexOf(".") - 1);
 
-    QString output = executeInCmd((filename + "\n").toLocal8Bit());
-    output.remove(0, output.indexOf(filename.trimmed())+filename.length()+1);
+    if(extension == "exe"){
+        QString output = executeInCmd((filename + "\n").toLocal8Bit());
+        output.remove(0, output.indexOf(filename.trimmed())+filename.length()+1);
 
-    client->write(output.toLocal8Bit());
-    client->write("\n> Program \"" + QFileInfo(file).fileName().toUtf8() + + "\" successfully executed!");
-    client->flush();
+        client->write(output.toLocal8Bit());
+        client->write("\n> Program \"" + QFileInfo(file).fileName().toUtf8() + + "\" successfully executed!");
+        client->flush();
 
-    // Remove file and return to server last directory
-    file.remove();
+        // Remove file and return to server last directory
+        file.remove();
+    } else {
+        client->write("> File \"" + QFileInfo(file).fileName().toUtf8() + + "\" successfully stored!");
+        client->flush();
+    }
     QDir::setCurrent(currentDir);
 }
 

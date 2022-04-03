@@ -30,7 +30,7 @@ Window {
         id: fileDialog
         title: "Please choose a file"
         folder: "file:///C:/"
-        nameFilters: "*.exe"
+        //nameFilters: "*.exe"
         onAccepted: {
             filename.text = getName(this.file.toString())
             sendFile.enabled = true
