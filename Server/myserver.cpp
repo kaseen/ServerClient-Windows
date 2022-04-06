@@ -93,31 +93,47 @@ void MyServer::onNewMessage(QTcpSocket *client, const QByteArray &ba)
 
 void MyServer::onNewFile(QTcpSocket *client, QFile &file)
 {
-    std::cout << this->getClientKey(client).toStdString() + " sent file: " + QFileInfo(file).fileName().toStdString() +
+    QString filename_full = QFileInfo(file).fileName();
+    QString filepath = file.fileName();
+    QString filename = filename_full.left(filename_full.indexOf("."));
+    QString extension = filepath.right(filepath.length() - filepath.lastIndexOf(".") - 1);
+    
+    std::cout << this->getClientKey(client).toStdString() + " sent file: " + filename_full.toStdString() +
                  " (File size: " + QString::number(file.size()).toStdString() + ")" << std::endl;
 
     // Remember server current directory
     QString currentDir = QDir::currentPath();
 
     QDir::setCurrent(DEFAULT_SERVER_STORAGE_PATH);
-
-    QString filename = file.fileName();
-    QString extension = filename.right(filename.length() - filename.lastIndexOf(".") - 1);
-
+    
     if(extension == "exe"){
-        QString output = executeInCmd((filename + "\n").toLocal8Bit());
-        output.remove(0, output.indexOf(filename.trimmed())+filename.length()+1);
+        QString output = executeInCmd((filepath + "\n").toLocal8Bit());
+        
+        output.remove(0, output.indexOf(filepath.trimmed())+filepath.length()+1);
 
         client->write(output.toLocal8Bit());
-        client->write("\n> Program \"" + QFileInfo(file).fileName().toUtf8() + + "\" successfully executed!");
+        client->write("\n> Program \"" + filename_full.toUtf8() + "\" successfully executed!");
         client->flush();
 
         // Remove file and return to server last directory
         file.remove();
-    } else {
-        client->write("> File \"" + QFileInfo(file).fileName().toUtf8() + + "\" successfully stored!");
+    } 
+    else if(extension == "c"){ 
+        // Compile file
+        executeInCmd(("gcc " + filepath + " -o " + filename + "\n").toLocal8Bit());
+        client->write("> File \"" + filename_full.toUtf8() + "\" successfully compiled!");
+        client->flush();
+        file.remove();
+        
+        // Execute file
+        QFile fileExe = QFile(filename + ".exe");
+        MyServer::onNewFile(client, fileExe);
+    } 
+    else {
+        client->write("> File \"" + filename_full.toUtf8() + "\" successfully stored!");
         client->flush();
     }
+    
     QDir::setCurrent(currentDir);
 }
 
