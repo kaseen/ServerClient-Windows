@@ -14,8 +14,10 @@ public:
     explicit TcpClient(QObject *parent = nullptr);
 
 signals:
-    // QML joins onNewMessageQML in Connections with this signal
+    // QML joins onNewMessageQML in ClientUI.qml Connections with this signal
     void newMessageQML(const QByteArray &ba);
+    // QML joins onConnectionSuccess in LoginPage.qml Connections with this signal
+    void connectionSuccess();
 
 public slots:
     void connectToHost(const QString &ip, const QString &port);

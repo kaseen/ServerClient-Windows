@@ -38,6 +38,7 @@ void TcpClient::sendFile(const QString &path)
 
 void TcpClient::onConnected()
 {
+    emit connectionSuccess();
     qInfo() << "Connected";
 }
 

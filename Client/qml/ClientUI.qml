@@ -1,23 +1,10 @@
 import QtQuick 2.15
-import QtQuick.Window 2.15
 import QtQuick.Controls 2.5
 import QtQuick.Layouts 1.3
 //import QtQuick.Dialogs 1.5
 import Qt.labs.platform as Labs
 
-Window {
-    width: 640
-    height: 480
-    visible: true
-    title: qsTr("Client")
-
-    function getName(url){
-        return (url.slice(url.lastIndexOf("/")+1))
-    }
-
-    function getFilePath(url){
-        return (url.slice(url.indexOf("///")+3))
-    }
+Item {
     
     Connections {
         target: client
@@ -25,7 +12,15 @@ Window {
             listModelMessages.append({message: ba + ""})
         }
     }
-
+    
+    function getName(url){
+        return (url.slice(url.lastIndexOf("/")+1))
+    }
+    
+    function getFilePath(url){
+        return (url.slice(url.indexOf("///")+3))
+    }
+    
     Labs.FileDialog {
         id: fileDialog
         title: "Please choose a file"
@@ -39,7 +34,7 @@ Window {
             client.sendFile(getFilePath(this.file.toString()))
         }
     }
-
+    
     ColumnLayout {
         anchors.fill: parent
         RowLayout{
